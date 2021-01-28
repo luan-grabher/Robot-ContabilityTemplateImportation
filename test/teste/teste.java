@@ -7,6 +7,11 @@ import java.util.HashMap;
 public class teste {
 
     public static void main(String[] args) {
+        String s = "";
+        
+        System.out.println(s.split(";").length);
+    }
+    public static void test() {
         int mes = 10;
         int ano = 2020;
         String pastaEmpresa = "Ecofetal  Serviço de Auxílio Diagnóstico e Terapia Ltda";
@@ -34,6 +39,7 @@ public class teste {
                         banco,
                         idTemplate,
                         filtroArquivo,
+                        "excel",
                         colunas
                 ).replaceAll("<br>", "\n")
         );
