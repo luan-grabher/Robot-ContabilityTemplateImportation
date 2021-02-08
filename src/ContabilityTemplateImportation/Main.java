@@ -18,7 +18,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             AppRobo robo = new AppRobo(nomeApp);
-            robo.definirParametros();
+            robo.definirParametros("[mes:12][ano:2020][ini:robot-pontoonline.ini]");
 
             String iniPath = "\\\\heimerdinger\\docs\\Informatica\\Programas\\Moresco\\Robos\\Contabilidade\\TemplateImportacao\\";
             String iniName = robo.getParametro("ini").getString();
@@ -56,6 +56,8 @@ public class Main {
                     colunas.put("saida", getCollumnConfig("saida", ini.get("Colunas" + template, "saida")));
                     colunas.put("valor", getCollumnConfig("valor", ini.get("Colunas" + template, "valor")));
                 }
+                
+                
 
                 returnExecutions.append("\n").append(
                         principal(mes, ano, pastaEmpresa, pastaAnual, pastaMensal, nomeTemplate, idTemplate, filtroArquivo, tipo, colunas)
@@ -71,21 +73,25 @@ public class Main {
     }
 
     public static Map<String, String> getCollumnConfig(String collumn, String iniString) {
-        Map<String, String> config = new HashMap<>();
-        String[] configs = iniString.split("¬", -1);
+        if (!"".equals(iniString) && iniString != null) {
+            Map<String, String> config = new HashMap<>();
+            String[] configs = iniString.split("¬", -1);
 
-        config.put("name", collumn);
-        config.put("collumn", Args.get(configs, "collumn"));
-        config.put("regex", Args.get(configs, "regex"));
-        config.put("replace", Args.get(configs, "replace"));
-        config.put("type", Args.get(configs, "type"));
-        config.put("dateFormat", Args.get(configs, "dateFormat"));
-        config.put("required", Args.get(configs, "required"));
-        config.put("requiredBlank", Args.get(configs, "requiredBlank"));
-        config.put("unifyDown", Args.get(configs, "unifyDown"));
-        config.put("forceNegativeIf", Args.get(configs, "forceNegativeIf"));
+            config.put("name", collumn);
+            config.put("collumn", Args.get(configs, "collumn"));
+            config.put("regex", Args.get(configs, "regex"));
+            config.put("replace", Args.get(configs, "replace"));
+            config.put("type", Args.get(configs, "type"));
+            config.put("dateFormat", Args.get(configs, "dateFormat"));
+            config.put("required", Args.get(configs, "required"));
+            config.put("requiredBlank", Args.get(configs, "requiredBlank"));
+            config.put("unifyDown", Args.get(configs, "unifyDown"));
+            config.put("forceNegativeIf", Args.get(configs, "forceNegativeIf"));
 
-        return config;
+            return config;
+        } else {
+            return null;
+        }
     }
 
     public static String principal(int mes, int ano, String pastaEmpresa, String pastaAnual, String pastaMensal, String nomeTemplate, String idTemplate, String filtroArquivo, String tipo, Map<String, Map<String, String>> colunas) {
