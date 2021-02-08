@@ -4,6 +4,7 @@ import Entity.Executavel;
 import Robo.AppRobo;
 import TemplateContabil.Control.ControleTemplates;
 import TemplateContabil.Model.Entity.Importation;
+import fileManager.Args;
 import fileManager.FileManager;
 import java.util.Map;
 import java.util.HashMap;
@@ -45,15 +46,15 @@ public class Main {
                 String filtroArquivo = ini.get("Template" + template, "filtroArquivo");
                 String tipo = ini.get("Template" + template, "tipo");
 
-                Map<String, String> colunas = new HashMap<>();
+                Map<String, Map<String, String>> colunas = new HashMap<>();
                 if (tipo.equals("excel")) {
-                    colunas.put("data", ini.get("Colunas" + template, "data"));
-                    colunas.put("documento", ini.get("Colunas" + template, "documento"));
-                    colunas.put("pretexto", ini.get("Colunas" + template, "pretexto"));
-                    colunas.put("historico", ini.get("Colunas" + template, "historico"));
-                    colunas.put("entrada", ini.get("Colunas" + template, "entrada"));
-                    colunas.put("saida", ini.get("Colunas" + template, "saida"));
-                    colunas.put("valor", ini.get("Colunas" + template, "valor"));
+                    colunas.put("data", getCollumnConfig("data", ini.get("Colunas" + template, "data")));
+                    colunas.put("documento", getCollumnConfig("documento", ini.get("Colunas" + template, "documento")));
+                    colunas.put("pretexto", getCollumnConfig("pretexto", ini.get("Colunas" + template, "pretexto")));
+                    colunas.put("historico", getCollumnConfig("historico", ini.get("Colunas" + template, "historico")));
+                    colunas.put("entrada", getCollumnConfig("entrada", ini.get("Colunas" + template, "entrada")));
+                    colunas.put("saida", getCollumnConfig("saida", ini.get("Colunas" + template, "saida")));
+                    colunas.put("valor", getCollumnConfig("valor", ini.get("Colunas" + template, "valor")));
                 }
 
                 returnExecutions.append("\n").append(
@@ -69,13 +70,31 @@ public class Main {
         }
     }
 
-    public static String principal(int mes, int ano, String pastaEmpresa, String pastaAnual, String pastaMensal, String nomeTemplate, String idTemplate, String filtroArquivo, String tipo, Map<String, String> colunas) {
+    public static Map<String, String> getCollumnConfig(String collumn, String iniString) {
+        Map<String, String> config = new HashMap<>();
+        String[] configs = iniString.split("¬", -1);
+
+        config.put("name", collumn);
+        config.put("collumn", Args.get(configs, "collumn"));
+        config.put("regex", Args.get(configs, "regex"));
+        config.put("replace", Args.get(configs, "replace"));
+        config.put("type", Args.get(configs, "type"));
+        config.put("dateFormat", Args.get(configs, "dateFormat"));
+        config.put("required", Args.get(configs, "required"));
+        config.put("requiredBlank", Args.get(configs, "requiredBlank"));
+        config.put("unifyDown", Args.get(configs, "unifyDown"));
+        config.put("forceNegativeIf", Args.get(configs, "forceNegativeIf"));
+
+        return config;
+    }
+
+    public static String principal(int mes, int ano, String pastaEmpresa, String pastaAnual, String pastaMensal, String nomeTemplate, String idTemplate, String filtroArquivo, String tipo, Map<String, Map<String, String>> colunas) {
         try {
             Importation importation = new Importation();
-            importation.setTIPO(tipo.equals("excel")?Importation.TIPO_EXCEL:Importation.TIPO_OFX);
-            importation.getExcelCols().putAll(colunas);
-            
-            importation.setIdTemplateConfig(idTemplate);            
+            importation.setTIPO(tipo.equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
+            importation.getXlsxCols().putAll(colunas);
+
+            importation.setIdTemplateConfig(idTemplate);
             importation.setNome(nomeTemplate);
 
             ControleTemplates controle = new ControleTemplates(mes, ano);
