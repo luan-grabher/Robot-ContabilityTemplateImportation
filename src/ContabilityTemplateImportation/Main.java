@@ -18,7 +18,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             AppRobo robo = new AppRobo(nomeApp);
-            robo.definirParametros("[mes:12][ano:2020][ini:robot-pontoonline.ini]");
+            robo.definirParametros();
 
             String iniPath = "\\\\heimerdinger\\docs\\Informatica\\Programas\\Moresco\\Robos\\Contabilidade\\TemplateImportacao\\";
             String iniName = robo.getParametro("ini").getString();
