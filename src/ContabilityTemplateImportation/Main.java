@@ -23,7 +23,7 @@ public class Main {
             String iniPath = "\\\\heimerdinger\\docs\\Informatica\\Programas\\Moresco\\Robos\\Contabilidade\\TemplateImportacao\\";
             String iniName = robo.getParametro("ini").getString();
 
-            Ini ini = new Ini(FileManager.getFile(iniPath + iniName));
+            Ini ini = new Ini(FileManager.getFile(iniPath + iniName + ".ini"));
 
             String pastaEmpresa = ini.get("Pastas", "empresa");
             String pastaAnual = ini.get("Pastas", "anual");
