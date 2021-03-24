@@ -6,6 +6,9 @@ import Robo.AppRobo;
 import TemplateContabil.Control.ControleTemplates;
 import TemplateContabil.Model.Entity.Importation;
 import fileManager.FileManager;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -64,9 +67,18 @@ public class Main {
             robo.executar(returnExecutions.toString());
         } catch (Exception e) {
             e.printStackTrace();
+            FileManager.save(new File(System.getProperty("user.home")) + "\\Desktop\\JavaError.txt", getStackTrace(e));
             System.out.println("Ocorreu um erro na aplicação: " + e);
             System.exit(0);
         }
+    }
+
+    private static String getStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+
+        return sw.toString();
     }
 
     /**
@@ -120,40 +132,35 @@ public class Main {
     }
 
     public static String start(int mes, int ano, String pastaEmpresa, String pastaAnual, String pastaMensal, Map<String, Object> templateConfig, Map<String, Object> compararConfig) {
-        try {
-            Importation importation = new Importation();
-            importation.setTIPO(templateConfig.get("tipo").equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
-            importation.setIdTemplateConfig((String) templateConfig.get("id"));
-            importation.setNome((String) templateConfig.get("nome"));
-            importation.getXlsxCols().putAll((Map<String, Map<String, String>>) templateConfig.get("colunas"));
+        Importation importation = new Importation();
+        importation.setTIPO(templateConfig.get("tipo").equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
+        importation.setIdTemplateConfig((String) templateConfig.get("id"));
+        importation.setNome((String) templateConfig.get("nome"));
+        importation.getXlsxCols().putAll((Map<String, Map<String, String>>) templateConfig.get("colunas"));
 
-            Importation importationC = null;
-            if (compararConfig != null) {
-                importationC = new Importation();
-                importationC.setTIPO(compararConfig.get("tipo").equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
-                importationC.setIdTemplateConfig((String) compararConfig.get("id"));
-                importationC.setNome((String) compararConfig.get("nome"));
-                importationC.getXlsxCols().putAll((Map<String, Map<String, String>>) compararConfig.get("colunas"));
-            }
-
-            ControleTemplates controle = new ControleTemplates(mes, ano);
-            controle.setPastaEscMensal(pastaEmpresa);
-            controle.setPasta(pastaAnual, pastaMensal);
-
-            Map<String, Executavel> execs = new LinkedHashMap<>();
-            execs.put("Procurando arquivo " + templateConfig.get("filtroArquivo"), controle.new defineArquivoNaImportacao((String) templateConfig.get("filtroArquivo"), importation));
-            
-            if (compararConfig != null) {
-                execs.put("Procurando arquivo " + compararConfig.get("filtroArquivo"), controle.new defineArquivoNaImportacao((String) compararConfig.get("filtroArquivo"), importation));
-            }
-            
-            execs.put("Criando template " + templateConfig.get("nome"), controle.new converterArquivoParaTemplate(importation, importationC));
-
-            return AppRobo.rodarExecutaveis(nomeApp, execs);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Ocorreu um erro no Java: " + e;
+        Importation importationC = null;
+        if (compararConfig != null) {
+            importationC = new Importation();
+            importationC.setTIPO(compararConfig.get("tipo").equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
+            importationC.setIdTemplateConfig((String) compararConfig.get("id"));
+            importationC.setNome((String) compararConfig.get("nome"));
+            importationC.getXlsxCols().putAll((Map<String, Map<String, String>>) compararConfig.get("colunas"));
         }
+
+        ControleTemplates controle = new ControleTemplates(mes, ano);
+        controle.setPastaEscMensal(pastaEmpresa);
+        controle.setPasta(pastaAnual, pastaMensal);
+
+        Map<String, Executavel> execs = new LinkedHashMap<>();
+        execs.put("Procurando arquivo " + templateConfig.get("filtroArquivo"), controle.new defineArquivoNaImportacao((String) templateConfig.get("filtroArquivo"), importation));
+
+        if (compararConfig != null) {
+            execs.put("Procurando arquivo " + compararConfig.get("filtroArquivo"), controle.new defineArquivoNaImportacao((String) compararConfig.get("filtroArquivo"), importation));
+        }
+
+        execs.put("Criando template " + templateConfig.get("nome"), controle.new converterArquivoParaTemplate(importation, importationC));
+
+        return AppRobo.rodarExecutaveis(nomeApp, execs);
     }
 
 }
