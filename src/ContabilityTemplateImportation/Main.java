@@ -1,10 +1,10 @@
 package ContabilityTemplateImportation;
 
 import Entity.Executavel;
+import JExcel.XLSX;
 import Robo.AppRobo;
 import TemplateContabil.Control.ControleTemplates;
 import TemplateContabil.Model.Entity.Importation;
-import fileManager.Args;
 import fileManager.FileManager;
 import java.util.Map;
 import java.util.HashMap;
@@ -14,6 +14,7 @@ import org.ini4j.Ini;
 public class Main {
 
     private static String nomeApp = "";
+    private static Ini ini = null;
 
     public static void main(String[] args) {
         try {
@@ -21,16 +22,17 @@ public class Main {
             robo.definirParametros();
 
             String iniPath = "\\\\heimerdinger\\docs\\Informatica\\Programas\\Moresco\\Robos\\Contabilidade\\TemplateImportacao\\";
-            String iniName = robo.getParametro("ini").getString();
+            String iniName = robo.getParametro("ini");
 
-            Ini ini = new Ini(FileManager.getFile(iniPath + iniName + ".ini"));
+            ini = new Ini(FileManager.getFile(iniPath + iniName + ".ini"));
 
             String pastaEmpresa = ini.get("Pastas", "empresa");
             String pastaAnual = ini.get("Pastas", "anual");
             String pastaMensal = ini.get("Pastas", "mensal");
 
-            int mes = robo.getParametro("mes").getMes();
-            int ano = robo.getParametro("ano").getInteger();
+            int mes = Integer.valueOf(robo.getParametro("mes"));
+            mes = mes >= 1 && mes <= 12 ? mes : 1;
+            int ano = Integer.valueOf(robo.getParametro("ano"));
 
             nomeApp = "Importação " + pastaEmpresa + " - " + ini.get("Config", "nome") + " " + mes + "/" + ano;
 
@@ -41,26 +43,13 @@ public class Main {
             for (String template : templates) {
                 template = !template.equals("") ? " " + template : "";
 
-                String nomeTemplate = ini.get("Template" + template, "nome");
-                String idTemplate = ini.get("Template" + template, "id");
-                String filtroArquivo = ini.get("Template" + template, "filtroArquivo");
-                String tipo = ini.get("Template" + template, "tipo");
+                String comparar = template + (template.equals("") ? "" : " ") + "Comparar";
 
-                Map<String, Map<String, String>> colunas = new HashMap<>();
-                if (tipo.equals("excel")) {
-                    colunas.put("data", getCollumnConfig("data", ini.get("Colunas" + template, "data")));
-                    colunas.put("documento", getCollumnConfig("documento", ini.get("Colunas" + template, "documento")));
-                    colunas.put("pretexto", getCollumnConfig("pretexto", ini.get("Colunas" + template, "pretexto")));
-                    colunas.put("historico", getCollumnConfig("historico", ini.get("Colunas" + template, "historico")));
-                    colunas.put("entrada", getCollumnConfig("entrada", ini.get("Colunas" + template, "entrada")));
-                    colunas.put("saida", getCollumnConfig("saida", ini.get("Colunas" + template, "saida")));
-                    colunas.put("valor", getCollumnConfig("valor", ini.get("Colunas" + template, "valor")));
-                }
-                
-                
+                Map<String, Object> templateConfig = getTemplateConfig(template);
+                Map<String, Object> compararConfig = getTemplateConfig(comparar);
 
                 returnExecutions.append("\n").append(
-                        principal(mes, ano, pastaEmpresa, pastaAnual, pastaMensal, nomeTemplate, idTemplate, filtroArquivo, tipo, colunas)
+                        start(mes, ano, pastaEmpresa, pastaAnual, pastaMensal, templateConfig, compararConfig)
                 );
             }
 
@@ -72,44 +61,78 @@ public class Main {
         }
     }
 
-    public static Map<String, String> getCollumnConfig(String collumn, String iniString) {
-        if (!"".equals(iniString) && iniString != null) {
-            Map<String, String> config = new HashMap<>();
-            String[] configs = iniString.split("¬", -1);
+    /**
+     * Retorna as configurações do template selecionado
+     *
+     * @param template Nome do template na seção ini
+     */
+    private static Map<String, Object> getTemplateConfig(String template) {
 
-            config.put("name", collumn);
-            config.put("collumn", Args.get(configs, "collumn"));
-            config.put("regex", Args.get(configs, "regex"));
-            config.put("replace", Args.get(configs, "replace"));
-            config.put("type", Args.get(configs, "type"));
-            config.put("dateFormat", Args.get(configs, "dateFormat"));
-            config.put("required", Args.get(configs, "required"));
-            config.put("requiredBlank", Args.get(configs, "requiredBlank"));
-            config.put("unifyDown", Args.get(configs, "unifyDown"));
-            config.put("forceNegativeIf", Args.get(configs, "forceNegativeIf"));
-
-            return config;
-        } else {
+        //Se não encontrar a seção do template, retorna null
+        if (ini.get("Template" + template, "nome") == null) {
             return null;
         }
+
+        Map<String, Object> templateConfig = new HashMap<>();
+        templateConfig.put("nome", ini.get("Template" + template, "nome"));
+        templateConfig.put("id", ini.get("Template" + template, "id"));
+        templateConfig.put("filtroArquivo", ini.get("Template" + template, "filtroArquivo"));
+        templateConfig.put("tipo", ini.get("Template" + template, "tipo"));
+        templateConfig.put("colunas", getTemplateColsConfig((String) templateConfig.get("tipo"), template));
+
+        return templateConfig;
     }
 
-    public static String principal(int mes, int ano, String pastaEmpresa, String pastaAnual, String pastaMensal, String nomeTemplate, String idTemplate, String filtroArquivo, String tipo, Map<String, Map<String, String>> colunas) {
+    /**
+     * Retorna a configuração de colunas da seção "Colunas NOME-TEMPLATE" no
+     * arquivo ini
+     *
+     * @param template Nome do template na seção ini
+     * @param tipo Tipo do arquivo, para este metodo funcionar deve ser "excel"
+     * @return configuração de colunas da seção "Colunas NOME-TEMPLATE" no
+     * arquivo ini
+     */
+    private static Map<String, Map<String, String>> getTemplateColsConfig(String tipo, String template) {
+        Map<String, Map<String, String>> colunas = new HashMap<>();
+        if (tipo.equals("excel")) {
+            colunas.put("data", getCollumnConfig("data", template));
+            colunas.put("documento", getCollumnConfig("documento", template));
+            colunas.put("pretexto", getCollumnConfig("pretexto", template));
+            colunas.put("historico", getCollumnConfig("historico", template));
+            colunas.put("entrada", getCollumnConfig("entrada", template));
+            colunas.put("saida", getCollumnConfig("saida", template));
+            colunas.put("valor", getCollumnConfig("valor", template));
+        }
+
+        return colunas;
+    }
+
+    private static Map<String, String> getCollumnConfig(String collumnName, String template) {
+        return XLSX.getCollumnConfigFromString(collumnName, ini.get("Colunas" + template, collumnName));
+    }
+
+    public static String start(int mes, int ano, String pastaEmpresa, String pastaAnual, String pastaMensal, Map<String, Object> templateConfig, Map<String, Object> compararConfig) {
         try {
             Importation importation = new Importation();
-            importation.setTIPO(tipo.equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
-            importation.getXlsxCols().putAll(colunas);
+            importation.setTIPO(templateConfig.get("tipo").equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
+            importation.setIdTemplateConfig((String) templateConfig.get("id"));
+            importation.setNome((String) templateConfig.get("nome"));
+            importation.getXlsxCols().putAll((Map<String, Map<String, String>>) templateConfig.get("colunas"));
 
-            importation.setIdTemplateConfig(idTemplate);
-            importation.setNome(nomeTemplate);
+            Importation importationC = new Importation();
+            importationC.setTIPO(compararConfig.get("tipo").equals("excel") ? Importation.TIPO_EXCEL : Importation.TIPO_OFX);
+            importationC.setIdTemplateConfig((String) compararConfig.get("id"));
+            importationC.setNome((String) compararConfig.get("nome"));
+            importationC.getXlsxCols().putAll((Map<String, Map<String, String>>) compararConfig.get("colunas"));
 
             ControleTemplates controle = new ControleTemplates(mes, ano);
             controle.setPastaEscMensal(pastaEmpresa);
             controle.setPasta(pastaAnual, pastaMensal);
 
             Map<String, Executavel> execs = new LinkedHashMap<>();
-            execs.put("Procurando arquivo " + nomeTemplate, controle.new defineArquivoNaImportacao(filtroArquivo, importation));
-            execs.put("Criando template " + nomeTemplate, controle.new converterArquivoParaTemplate(importation));
+            execs.put("Procurando arquivo " + templateConfig.get("filtroArquivo"), controle.new defineArquivoNaImportacao((String) templateConfig.get("filtroArquivo"), importation));
+            execs.put("Procurando arquivo " + compararConfig.get("filtroArquivo"), controle.new defineArquivoNaImportacao((String) compararConfig.get("filtroArquivo"), importation));
+            execs.put("Criando template " + templateConfig.get("nome"), controle.new converterArquivoParaTemplate(importation, importationC));
 
             return AppRobo.rodarExecutaveis(nomeApp, execs);
         } catch (Exception e) {
