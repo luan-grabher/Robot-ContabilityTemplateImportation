@@ -25,7 +25,7 @@ public class Main {
         try {
             AppRobo robo = new AppRobo(nomeApp);
 
-            if (args[0].equals("test")) {
+            if (args.length > 0 && args[0].equals("test")) {
                 robo.definirParametros(testParameters);
             } else {
                 robo.definirParametros();
