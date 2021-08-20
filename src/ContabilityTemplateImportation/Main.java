@@ -121,6 +121,8 @@ public class Main {
             colunas.put("entrada", getCollumnConfig("entrada", template));
             colunas.put("saida", getCollumnConfig("saida", template));
             colunas.put("valor", getCollumnConfig("valor", template));
+            colunas.put("startGet", getCollumnConfig("startGet", template));
+            colunas.put("endGet", getCollumnConfig("endGet", template));
         }
 
         return colunas;
