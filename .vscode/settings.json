@@ -1,0 +1,6 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "e:\\Documents\\Projetos\\Moresco\\AccountingTemplate\\AccountingTemplate.jar"
+    ]
+}

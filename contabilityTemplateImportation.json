@@ -1,0 +1,10 @@
+{
+    "serverName": "heimerdinger",
+    "serverPathName" : "docs",
+    "departmentName" : "Informatica",
+    "programsFolderName" : "Programas",
+    "companyName" : "Moresco",
+
+    "serverFolder" : "\\\\:serverName:\\:serverPathName:\\:departmentName:\\:programsFolderName:\\:companyName:",
+    "templatesFolder" : ":serverFolder:\\Robos\\Contabilidade\\TemplateImportacao"
+}

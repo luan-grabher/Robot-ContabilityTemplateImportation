@@ -14,12 +14,44 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import org.ini4j.Ini;
 
+import com.google.gson.Gson;
+
 public class Main {
 
     private static String nomeApp = "";
     private static Ini ini = null;
 
     public static String testParameters = "";
+
+    public static Map<String, Object> getConfig() throws Exception{
+        String configFileName = "./contabilityTemplateImportation.json";
+        File configFile = new File(configFileName);
+        if(!configFile.exists()){
+            throw new Exception("Arquivo de configuração não encontrado: " + configFileName);
+        }
+
+        String config = FileManager.getText(configFileName);
+        Gson gson = new Gson();
+        Map<String, Object> configMap = gson.fromJson(config, Map.class);
+        
+        return configMap;
+    }
+
+    public static String getRobotsTemplatesFolder() throws Exception{
+        Map<String, Object> config = getConfig();
+
+        String serverFolder = (String) config.get("serverFolder");
+        serverFolder = serverFolder.replace(":serverName:", (String) config.get("serverName"));
+        serverFolder = serverFolder.replace(":serverPathName:", (String) config.get("serverPathName"));
+        serverFolder = serverFolder.replace(":departmentName:", (String) config.get("departmentName"));
+        serverFolder = serverFolder.replace(":programsFolderName:", (String) config.get("programsFolderName"));
+        serverFolder = serverFolder.replace(":companyName:", (String) config.get("companyName"));
+
+        String templatesFolder = (String) config.get("templatesFolder");
+        templatesFolder = templatesFolder.replace(":serverFolder:", serverFolder);
+
+        return templatesFolder;        
+    }
 
     public static void main(String[] args) {
         try {
@@ -30,40 +62,44 @@ public class Main {
                 robo.definirParametros(testParameters);
             }
 
-            String iniPath = "\\\\heimerdinger\\docs\\Informatica\\Programas\\Moresco\\Robos\\Contabilidade\\TemplateImportacao\\";
-            String iniName = robo.getParametro("ini");
+            try{
+                String iniPath = getRobotsTemplatesFolder();
+                String iniName = robo.getParametro("ini");
 
-            ini = new Ini(FileManager.getFile(iniPath + iniName + ".ini"));
+                ini = new Ini(FileManager.getFile(iniPath + "\\" + iniName + ".ini"));
 
-            String pastaEmpresa = ini.get("Pastas", "empresa");
-            String pastaAnual = ini.get("Pastas", "anual");
-            String pastaMensal = ini.get("Pastas", "mensal");
+                String pastaEmpresa = ini.get("Pastas", "empresa");
+                String pastaAnual = ini.get("Pastas", "anual");
+                String pastaMensal = ini.get("Pastas", "mensal");
 
-            int mes = Integer.valueOf(robo.getParametro("mes"));
-            mes = mes >= 1 && mes <= 12 ? mes : 1;
-            int ano = Integer.valueOf(robo.getParametro("ano"));
+                int mes = Integer.valueOf(robo.getParametro("mes"));
+                mes = mes >= 1 && mes <= 12 ? mes : 1;
+                int ano = Integer.valueOf(robo.getParametro("ano"));
 
-            nomeApp = "Importação " + pastaEmpresa + " - " + ini.get("Config", "nome") + " " + mes + "/" + ano;
+                nomeApp = "Importação " + pastaEmpresa + " - " + ini.get("Config", "nome") + " " + mes + "/" + ano;
 
-            StringBuilder returnExecutions = new StringBuilder();
+                StringBuilder returnExecutions = new StringBuilder();
 
-            String[] templates = ini.get("Config", "templates").split(";");
-            //Para cada template pega as informações
-            for (String template : templates) {
-                template = !template.equals("") ? " " + template : "";
+                String[] templates = ini.get("Config", "templates").split(";");
+                //Para cada template pega as informações
+                for (String template : templates) {
+                    template = !template.equals("") ? " " + template : "";
 
-                String comparar = template + (template.equals("") ? "" : " ") + "Comparar";
+                    String comparar = template + (template.equals("") ? "" : " ") + "Comparar";
 
-                Map<String, Object> templateConfig = getTemplateConfig(template);
-                Map<String, Object> compararConfig = getTemplateConfig(comparar);
+                    Map<String, Object> templateConfig = getTemplateConfig(template);
+                    Map<String, Object> compararConfig = getTemplateConfig(comparar);
 
-                returnExecutions.append("\n").append(
-                        start(mes, ano, pastaEmpresa, pastaAnual, pastaMensal, templateConfig, compararConfig)
-                );
+                    returnExecutions.append("\n").append(
+                            start(mes, ano, pastaEmpresa, pastaAnual, pastaMensal, templateConfig, compararConfig)
+                    );
+                }
+
+                robo.setNome(nomeApp);
+                robo.executar(returnExecutions.toString());
+            } catch (Exception e){
+                robo.executar("Ocorreu um erro na aplicação: " + e);
             }
-
-            robo.setNome(nomeApp);
-            robo.executar(returnExecutions.toString());
         } catch (Exception e) {
             e.printStackTrace();
             FileManager.save(new File(System.getProperty("user.home")) + "\\Desktop\\JavaError.txt", getStackTrace(e));

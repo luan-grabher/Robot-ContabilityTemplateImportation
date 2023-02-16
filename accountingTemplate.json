@@ -1,0 +1,17 @@
+﻿{
+    "serverName": "heimerdinger",
+
+    "serverPathName" : "docs",
+    "departmentName" : "Informatica",
+    "programsFolderName" : "Programas",
+    "companyName" : "Moresco",
+    
+    "templatesFolderName" : "Robos\\Contabilidade\\TemplateImportacao",
+    "templateFileName" : "Default.xlsm",
+
+    "serverFolder" : "\\\\:serverName:\\:serverPathName:\\:departmentName:\\:programsFolderName:\\:companyName:",
+    "templatePath" : ":serverFolder:\\:templatesFolderName:\\:templateFileName:",
+    
+    "escrituracaoFolder" : "\\\\:serverName:\\DOCS\\Contábil\\Clientes\\:companyFolder:\\Escrituração mensal",
+    "pastaArquivos" : ":escrituracaoFolder:\\:ano:\\:pastaAnual:\\:mes:.:ano::pastaMensal:"
+}
